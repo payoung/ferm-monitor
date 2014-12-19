@@ -1,24 +1,77 @@
 """
 Grab temperature data from arduino via the serial port
-and sends it to a remote server via sockets
+and send it to a remote server via sockets
 """
 
 import serial
 import datetime
 import logging
+import socket
+import sys, getopt
+import json
 
 
-def main():
+def error_handler(errmsg, message, stop=True):
+    """
+    Handle Errors for main function
+    errmsg: the exception error message
+    message: additional message
+    stop: default=True, stops exectution of code
+    """
+    message += " Error Code: " + str(errmsg[0]) + " - " + str(errmsg[1])
+    print message
+    rightnow = str(datetime.datetime.now())
+    logging.debug(rightnow + ": " + message)
+    if stop:
+        sys.exit()
+
+
+def main(argv):
     """" Run Main """
-    logging.basicConfig(filename='serial2socket.log', level=logging.INFO)
-    
+
+    opts, args = getopt.getopt(argv[1:], "hs:a:p:", ["help", "serial=", "addr=", "port="])
+    for opt, arg in opts:
+        if opt == '-h':
+            print "-s --serial: serail port for arduino, string.  ex: '/dev/ttyUSB0'\n" + \
+            "-a --addr: server netwrok address, string. ex: '127.0.0.1'\n" + \
+            "-p --port: server port, integer. ex: 80"
+            sys.exit()
+        elif opt in ('-s', '--serial'):
+            serialport = arg
+        elif opt in ('-a', '--addr'):
+            host = arg
+        elif opt in ('-p', '--port'):
+            port = arg
+
+    logging.basicConfig(filename='serial2socket.log', level=logging.DEBUG)
     start = datetime.datetime.now()
     tsstart = start
     message = "serial2socket started at " + str(start)
     logging.info(message)
-    ser = serial.Serial('/dev/ttyUSB0', 9600)
+
+    # set up serial connection
+    try:
+        ser = serial.Serial(serialport, 9600)
+    except OSError, errmsg:
+        message = "Serial Port does not exist or is not accessible."
+        error_handler(errmsg, message)
+
+    # Set up socket
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    except socket.error, errmsg:
+        message = "Failed to create socket."
+        error_handler(errmsg, message)
+    print "Socket Created"
+
+    # Create connection:
+    try:
+        s.connect((host, port))
+    except socket.error, errmsg:
+        message = "Unable to establish network connection."
+        error_handler(errmsg, message)
+
     i = 0
-    j = 0
     tempvals = []
     
     # clear out the first few readlines of ser as it can contain weird values
@@ -44,10 +97,12 @@ def main():
             timestamp = rightnow + (rightnow - tsstart)/2
             temperature = sum(tempvals)/float(len(tempvals))
             print temperature, timestamp
+            data = {'datetime':rightnow, 'temperature':temperature}
+            s.send(json.dumps(data))
             i = 0           
             tsstart = datetime.datetime.now()
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv)
 
