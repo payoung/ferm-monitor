@@ -99,9 +99,11 @@ def main(argv):
             print temperature, timestamp
             data = {'datetime':rightnow, 'temperature':temperature}
             s.send(json.dumps(data))
+            print json.loads(s.recv(1024))
             i = 0           
             tsstart = datetime.datetime.now()
 
+    s.close()
 
 if __name__ == '__main__':
     main(sys.argv)
