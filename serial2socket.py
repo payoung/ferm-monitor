@@ -26,9 +26,34 @@ def error_handler(errmsg, message, stop=True):
         sys.exit()
 
 
-def main(argv):
-    """" Run Main """
+def send_data(host, port, data):
+    """ Establish connection to server and send data"""
+    # Set up socket
+    try:
+        soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    except socket.error, errmsg:
+        message = "Failed to create socket."
+        error_handler(errmsg, message)
 
+    # Create connection:
+    try:
+        soc.connect((host, port))
+    except socket.error, errmsg:
+        message = "Unable to establish network connection."
+        error_handler(errmsg, message)
+
+    # send data
+    try:
+        soc.send(json.dumps(data))
+        print soc.recv(1024)
+    except socket.error, msg:
+        print msg
+
+    soc.close() # close connection
+
+
+def get_args(argv):
+    """ Process and return sys args """
     opts, args = getopt.getopt(argv[1:], "hs:a:p:", ["help", "serial=", "addr=", "port="])
     for opt, arg in opts:
         if opt == '-h':
@@ -41,8 +66,15 @@ def main(argv):
         elif opt in ('-a', '--addr'):
             host = arg
         elif opt in ('-p', '--port'):
-            port = arg
+            port = int(arg)
 
+    return serialport, host, port
+
+
+
+def main(argv):
+    """" Run Main """
+    serialport, host, port = get_args(argv)
     logging.basicConfig(filename='serial2socket.log', level=logging.DEBUG)
     start = datetime.datetime.now()
     tsstart = start
@@ -55,30 +87,14 @@ def main(argv):
     except OSError, errmsg:
         message = "Serial Port does not exist or is not accessible."
         error_handler(errmsg, message)
-
-    # Set up socket
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    except socket.error, errmsg:
-        message = "Failed to create socket."
-        error_handler(errmsg, message)
-    print "Socket Created"
-
-    # Create connection:
-    try:
-        s.connect((host, port))
-    except socket.error, errmsg:
-        message = "Unable to establish network connection."
-        error_handler(errmsg, message)
-
-    i = 0
-    tempvals = []
     
     # clear out the first few readlines of ser as it can contain weird values
     for _ in range(2):
         ser.readline()
 
     # collect the serial data, average it
+    i = 0
+    tempvals = []
     while True:
         line = ser.readline()
 
@@ -92,18 +108,18 @@ def main(argv):
 
         i += 1
 
-        if i >= 10:
+        # after collecting some data, get the average and send across to server
+        if i >= 60:
             rightnow = datetime.datetime.now()
             timestamp = rightnow + (rightnow - tsstart)/2
             temperature = sum(tempvals)/float(len(tempvals))
-            print temperature, timestamp
-            data = {'datetime':rightnow, 'temperature':temperature}
-            s.send(json.dumps(data))
-            print json.loads(s.recv(1024))
-            i = 0           
+            print temperature, timestamp, len(tempvals)
+            data = {'datetime':str(timestamp), 'temperature':temperature}
+            send_data(host, port, data)
+            i = 0
+            tempvals = []
             tsstart = datetime.datetime.now()
 
-    s.close()
 
 if __name__ == '__main__':
     main(sys.argv)
