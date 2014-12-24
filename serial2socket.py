@@ -26,30 +26,31 @@ def error_handler(errmsg, message, stop=True):
         sys.exit()
 
 
-def send_data(host, port, data):
-    """ Establish connection to server and send data"""
-    # Set up socket
+def send_data(host, port, data, conn_attempts):
+    """ 
+    Establish connection to server and send data.  If connection fails:
+    If more than 10 consecutive attempts to connect to server
+    have failed, than exit program
+    Otherwise increment and return the failed connection counter
+    """
+
     try:
         soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    except socket.error, errmsg:
-        message = "Failed to create socket."
-        error_handler(errmsg, message)
-
-    # Create connection:
-    try:
         soc.connect((host, port))
-    except socket.error, errmsg:
-        message = "Unable to establish network connection."
-        error_handler(errmsg, message)
-
-    # send data
-    try:
         soc.send(json.dumps(data))
         print soc.recv(1024)
-    except socket.error, msg:
-        print msg
+        conn_attempts = 0
+    except socket.error, errmsg:
+        if conn_attempts > 10':
+            message = "Connection failed after 10 tries, exiting program"
+            error_handler(errmsg, message)
+        else:
+            message = "Connection failed, will attempt again"
+            error_handler(errmsg, message, stop=False)
+            conn_attempts += 1
 
-    soc.close() # close connection
+    soc.close()
+    return conn_attemtps
 
 
 def get_args(argv):
@@ -80,6 +81,8 @@ def main(argv):
     tsstart = start
     message = "serial2socket started at " + str(start)
     logging.info(message)
+    # Use this to keep track of failed connection attempts, stop after 10
+    conn_attempts = 0
 
     # set up serial connection
     try:
@@ -115,7 +118,7 @@ def main(argv):
             temperature = sum(tempvals)/float(len(tempvals))
             print temperature, timestamp, len(tempvals)
             data = {'datetime':str(timestamp), 'temperature':temperature}
-            send_data(host, port, data)
+            conn_attempts = send_data(host, port, data, conn_attempts)
             i = 0
             tempvals = []
             tsstart = datetime.datetime.now()
