@@ -87,6 +87,7 @@ def main(argv):
     # set up serial connection
     try:
         ser = serial.Serial(serialport, 9600)
+        print "Serial connection established"
     except OSError, errmsg:
         message = "Serial Port does not exist or is not accessible."
         error_handler(errmsg, message)
