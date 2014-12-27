@@ -41,7 +41,7 @@ def send_data(host, port, data, conn_attempts):
         print soc.recv(1024)
         conn_attempts = 0
     except socket.error, errmsg:
-        if conn_attempts > 10':
+        if conn_attempts > 10:
             message = "Connection failed after 10 tries, exiting program"
             error_handler(errmsg, message)
         else:
