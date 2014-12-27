@@ -101,7 +101,6 @@ def main(argv):
     tempvals = []
     while True:
         line = ser.readline()
-        print "Line read: ", line
         try:
             tempvals.append(float(line))
         except ValueError:
