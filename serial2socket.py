@@ -50,7 +50,7 @@ def send_data(host, port, data, conn_attempts):
             conn_attempts += 1
 
     soc.close()
-    return conn_attemtps
+    return conn_attempts
 
 
 def get_args(argv):
