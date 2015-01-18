@@ -13,6 +13,7 @@ void loop() {
   byte data[12];
   byte addr[8];
   float temp;
+  byte i;
   
   if (!ds.search(addr)) {
     ds.reset_search();
@@ -29,6 +30,11 @@ void loop() {
     data[i] = ds.read();
   }
   temp = ((data[1] << 8) + data[0])*0.0625;
-  Serial.println(temp);
+  for( i = 0; i < 8; i++) {
+    Serial.print(addr[i], HEX);
+  }
+  Serial.print(" ");
+  Serial.print(temp);
+  Serial.print("\n");
 
 }

@@ -9,6 +9,7 @@ import logging
 import socket
 import sys, getopt
 import json
+from collections import defaultdict
 
 
 def error_handler(errmsg, message, stop=True):
@@ -55,12 +56,13 @@ def send_data(host, port, data, conn_attempts):
 
 def get_args(argv):
     """ Process and return sys args """
-    opts, args = getopt.getopt(argv[1:], "hs:a:p:", ["help", "serial=", "addr=", "port="])
+    opts, args = getopt.getopt(argv[1:], "hs:a:p:i:", ["help", "serial=", "addr=", "port=", "id="])
     for opt, arg in opts:
         if opt == '-h':
             print "-s --serial: serail port for arduino, string.  ex: '/dev/ttyUSB0'\n" + \
             "-a --addr: server netwrok address, string. ex: '127.0.0.1'\n" + \
-            "-p --port: server port, integer. ex: 80"
+            "-p --port: server port, integer. ex: 80\n" + \
+            "-i --id: sensor unit id, string. ex: 'kitchen-sensor-1'"
             sys.exit()
         elif opt in ('-s', '--serial'):
             serialport = arg
@@ -68,14 +70,17 @@ def get_args(argv):
             host = arg
         elif opt in ('-p', '--port'):
             port = int(arg)
+        elif opt in ('-i', '--id'):
+            unit_id = arg
 
-    return serialport, host, port
+
+    return serialport, host, port, unit_id
 
 
 
 def main(argv):
     """" Run Main """
-    serialport, host, port = get_args(argv)
+    serialport, host, port, unit_id = get_args(argv)
     logging.basicConfig(filename='serial2socket.log', level=logging.DEBUG)
     start = datetime.datetime.now()
     tsstart = start
@@ -98,11 +103,11 @@ def main(argv):
 
     # collect the serial data, average it
     i = 0
-    tempvals = []
+    tempdata = defaultdict(list)
     while True:
-        line = ser.readline()
+        line = ser.readline().split()
         try:
-            tempvals.append(float(line))
+            tempdata[line[0]].append(float(line[1]))
         except ValueError:
             rightnow = datetime.datetime.now()
             message = str(rightnow) + ": Float Conversion Exception: " \
@@ -115,12 +120,15 @@ def main(argv):
         if i >= 60:
             rightnow = datetime.datetime.now()
             timestamp = rightnow + (rightnow - tsstart)/2
-            temperature = sum(tempvals)/float(len(tempvals))
-            print temperature, timestamp, len(tempvals)
-            data = {'datetime':str(timestamp), 'temperature':temperature}
+            avgtempdata = {}
+            for key, vals in tempdata.iteritems():
+                avgtempdata[key] = sum(vals)/float(len(vals))
+                tempdata[key] = []
+            print timestamp, avgtempdata 
+            data = {'unit_id':unit_id, 'datetime':str(timestamp),
+                    'temp data':avgtempdata}
             conn_attempts = send_data(host, port, data, conn_attempts)
             i = 0
-            tempvals = []
             tsstart = datetime.datetime.now()
 
 
