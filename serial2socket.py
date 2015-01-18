@@ -98,7 +98,7 @@ def main(argv):
         error_handler(errmsg, message)
     
     # clear out the first few readlines of ser as it can contain weird values
-    for _ in range(2):
+    for _ in range(5):
         ser.readline()
 
     # collect the serial data, average it
