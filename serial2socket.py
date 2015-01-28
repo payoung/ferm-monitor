@@ -105,12 +105,13 @@ def main(argv):
     i = 0
     tempdata = defaultdict(list)
     while True:
-        line = ser.readline().split()
+        line = ser.readline()
         if line == "CRC is not valid!":
             print line
         else:
+            serdata = line.split()
             try:
-                tempdata[line[0]].append(float(line[1]))
+                tempdata[serdata[0]].append(float(serdata[1]))
             except ValueError:
                 rightnow = datetime.datetime.now()
                 message = str(rightnow) + ": Float Conversion Exception: " \
