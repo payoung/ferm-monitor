@@ -18,6 +18,11 @@ void loop() {
   if (!ds.search(addr)) {
     ds.reset_search();
   }
+
+  if ( OneWire::crc8( addr, 7) != addr[7]) {
+      Serial.print("CRC is not valid!\n");
+      return;
+  }
   
   ds.reset();
   ds.select(addr);

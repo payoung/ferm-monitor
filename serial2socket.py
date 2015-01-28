@@ -106,7 +106,9 @@ def main(argv):
     tempdata = defaultdict(list)
     while True:
         line = ser.readline().split()
-        if float(line[1]) > 0:
+        if line == "CRC is not valid!":
+            print line
+        else:
             try:
                 tempdata[line[0]].append(float(line[1]))
             except ValueError:
