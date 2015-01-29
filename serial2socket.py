@@ -107,16 +107,10 @@ def main(argv):
     while True:
         line = ser.readline()
         serdata = line.split()
-        if float(serdata[1]) <= 0:
+        try:
+            tempdata[serdata[0]].append(float(serdata[1]))
+        except:
             print line
-        else:
-            try:
-                tempdata[serdata[0]].append(float(serdata[1]))
-            except ValueError:
-                rightnow = datetime.datetime.now()
-                message = str(rightnow) + ": Float Conversion Exception: " \
-                + line + "\n Time Since Start: " + str(rightnow-start)
-                logging.info(message)
 
         i += 1
 
