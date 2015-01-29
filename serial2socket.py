@@ -110,7 +110,7 @@ def main(argv):
         if line.strip() != 'CRC is not valid!':
             tempdata[serdata[0]].append(float(serdata[1]))
         else:
-            print line
+            print line.strip()
 
         i += 1
 
