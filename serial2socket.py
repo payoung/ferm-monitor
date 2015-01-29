@@ -107,9 +107,9 @@ def main(argv):
     while True:
         line = ser.readline()
         serdata = line.split()
-        try:
+        if line.strip() != 'CRC is not valid!':
             tempdata[serdata[0]].append(float(serdata[1]))
-        except:
+        else:
             print line
 
         i += 1
